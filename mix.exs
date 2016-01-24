@@ -1,4 +1,4 @@
-defmodule Epddl.Mixfile do
+defmodule EPDDL.Mixfile do
   use Mix.Project
 
   def project do
