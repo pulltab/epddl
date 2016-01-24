@@ -3,9 +3,9 @@ Definitions.
 WHITESPACE  =   [\s\t\n\r]
 DIGIT       =   [0-9]
 LETTER      =   [a-z,A-Z]
-CHAR        =   {LETTER}|{DIGIT}
+CHAR        =   ({LETTER}|{DIGIT})
 INT         =   {DIGIT}+
-NAME        =   {LETTER}({CHAR})+
+NAME        =   {LETTER}{CHAR}+
 
 DEFINE          =   define
 DOMAIN          =   domain
