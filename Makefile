@@ -23,5 +23,5 @@ deps:
 	mix deps.get
 
 .PHONY: shell
-shell:
+shell: all
 	iex -S mix
