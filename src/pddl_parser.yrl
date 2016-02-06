@@ -29,7 +29,9 @@ definition ->
     '(' define domainExpr ')' : {definition, '$3'}.
 
 domainExpr ->
-    '(' domain id ')' typesExpr predicatesExpr actionDefList : {domain, '$3', '$5', '$6', '$7'}.
+    '(' domain id ')' : #domain{id='$3'}.
+domainExpr ->
+    '(' domain id ')' typesExpr predicatesExpr actionDefList : #domain{id='$3', types='$5', predicates='$6', actions='$7'}.
 
 typesExpr ->
     '(' types idList ')' : '$3'.
@@ -38,7 +40,7 @@ predicatesExpr ->
     '(' predicates predicateDefList ')' : '$3'.
 
 predicateDef ->
-    '(' id varDefList ')' : {predicate, '$2', '$3'}.
+    '(' id varDefList ')' : #predicate{id='$2', vars='$3'}.
 
 predicateDefList ->
     predicateDef : ['$1'].
@@ -68,7 +70,7 @@ actionDefList ->
     actionDef actionDefList : ['$1'|'$2'].
 
 actionDef ->
-    '(' action id actionParameters actionPreconditions actionEffects ')' : {action, '$3', '$4', '$5'}. 
+    '(' action id actionParameters actionPreconditions actionEffects ')' : #action{id='$3', parameters='$4', preconditions='$5', effects='$6'}.
 
 actionParameters ->
     varDefList : '$1'.
@@ -118,5 +120,7 @@ boolExpr ->
 
 
 Erlang code.
+
+-include("pddl_types.hrl").
 
 extract({_, _, Value}) -> Value.
