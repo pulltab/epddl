@@ -43,14 +43,14 @@ predicateDef ->
 predicateDefList ->
     predicateDef : ['$1'].
 predicateDefList ->
-    predicateDef predicateDefList : '$1' ++ '$2'.
+    predicateDef predicateDefList : ['$1'|'$2'].
 
 varDef -> idList '-' type : Type='$3', [{variable, ID, Type} || ID <- '$1'].
 
 varDefList ->
-    varDef : '$1'.
+    varDef : ['$1'].
 varDefList ->
-    varDef varDefList : '$1' ++ '$2'.
+    varDef varDefList : ['$1'|'$2'].
 
 id -> name : extract('$1').
 
@@ -65,7 +65,7 @@ type -> name : extract('$1').
 actionDefList ->
     actionDef : ['$1'].
 actionDefList ->
-    actionDef actionDefList : '$1' ++ '$2'.
+    actionDef actionDefList : ['$1'|'$2'].
 
 actionDef ->
     '(' action id actionParameters actionPreconditions actionEffects ')' : {action, '$3', '$4', '$5'}. 
