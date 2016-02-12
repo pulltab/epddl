@@ -1,6 +1,7 @@
 
 -record(domain,
     {id = undefined,
+     requirements = [],
      types = [],
      predicates = [],
      actions = []
@@ -15,5 +16,10 @@
 
 -record(predicate,
     {id,
-     vars=[]
+     vars = []
+    }).
+
+-record(var,
+    {id,
+     type
     }).

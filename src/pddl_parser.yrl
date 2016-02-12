@@ -1,7 +1,6 @@
 Nonterminals    definition
-                domainExpr
-                typesExpr
-                predicatesExpr
+                domainExpr domainPropList domainProp
+                typesExpr predicatesExpr
                 predicate predicateDef predicateDefList
                 actionDefList actionDef actionParameters
                 actionPreconditions actionEffects actionEffect
@@ -20,21 +19,32 @@ Terminals       '(' ')' '-'
                 action
                 effects
                 domain
-                name
-                identifier.
+                name.
 
 Rootsymbol definition.
 
 definition ->
-    '(' define domainExpr ')' : {definition, '$3'}.
+    '(' define domainExpr ')' : '$3'.
 
 domainExpr ->
-    '(' domain id ')' : #domain{id='$3'}.
+    '(' domain id ')' : to_domain('$3', []).
 domainExpr ->
-    '(' domain id ')' typesExpr predicatesExpr actionDefList : #domain{id='$3', types='$5', predicates='$6', actions='$7'}.
+    '(' domain id ')' domainPropList : to_domain('$3', '$5').
 
+domainProp ->
+    typesExpr : {types, '$1'}.
+domainProp ->
+    predicatesExpr : {predicates, '$1'}.
+domainProp ->
+    actionDefList : {actions, '$1'}.
+
+domainPropList ->
+    domainProp : ['$1'].
+domainPropList ->
+    domainProp domainPropList : ['$1'|'$2'].
+ 
 typesExpr ->
-    '(' types idList ')' : '$3'.
+    '(' types idList ')' : require(typing), '$3'.
 
 predicatesExpr ->
     '(' predicates predicateDefList ')' : '$3'.
@@ -47,12 +57,17 @@ predicateDefList ->
 predicateDefList ->
     predicateDef predicateDefList : ['$1'|'$2'].
 
-varDef -> idList '-' type : Type='$3', [{variable, ID, Type} || ID <- '$1'].
+%% NOTE:  These two rules introduce a shift/reduce conflict. 
+varDef -> idList '-' type : 
+    require(typing),
+    Type='$3',
+    [#var{id=ID, type=Type} || ID <- '$1'].
+varDef -> idList : [#var{id=ID} || ID <- '$1'].
 
 varDefList ->
-    varDef : ['$1'].
+    varDef : '$1'.
 varDefList ->
-    varDef varDefList : ['$1'|'$2'].
+    varDef varDefList : lists:flatten(['$1'|'$2']).
 
 id -> name : extract('$1').
 
@@ -62,7 +77,6 @@ idList ->
     id idList : ['$1'|'$2'].
 
 type -> name : extract('$1').
-
 
 actionDefList ->
     actionDef : ['$1'].
@@ -121,6 +135,43 @@ boolExpr ->
 
 Erlang code.
 
--include("pddl_types.hrl").
+-include("../include/pddl_types.hrl").
+
+-define(REQUIREMENTS_TID, epddl_requirements).
 
 extract({_, _, Value}) -> Value.
+
+ensure_table(Tab) ->
+    try
+        ets:new(Tab, [named_table, private])
+    catch
+        _:_ ->
+            Tab
+    end.
+
+tab2list(Tab) ->
+    case ets:info(Tab) of
+        undefined ->
+            [];
+
+        _ ->
+            ets:tab2list(Tab)
+    end.
+
+require(Req) ->
+    ensure_table(?REQUIREMENTS_TID),
+    error_logger:info_msg("Pid: ~p, Requiring: ~p", [self(), Req]),
+    ets:insert(?REQUIREMENTS_TID, {atom_to_binary(Req, utf8), true}).
+
+to_domain(ID, []) ->
+    #domain{id=ID};
+to_domain(ID, PropList) ->
+    DomainMap = maps:from_list(PropList),
+    Requirements = [Req || {Req, true} <- tab2list(?REQUIREMENTS_TID)],
+    #domain{
+        id = ID,
+        requirements = Requirements,
+        types = maps:get(types, DomainMap, []),
+        predicates = maps:get(predicates, DomainMap, []),
+        actions = maps:get(actions, DomainMap, [])
+    }.

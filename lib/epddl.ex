@@ -1,5 +1,12 @@
 defmodule EPDDL do
 
+  require Record
+
+  Record.defrecord :domain, Record.extract(:domain, from: "include/pddl_types.hrl")
+  Record.defrecord :action, Record.extract(:action, from: "include/pddl_types.hrl")
+  Record.defrecord :predicate, Record.extract(:predicate, from: "include/pddl_types.hrl")
+  Record.defrecord :var, Record.extract(:var, from: "include/pddl_types.hrl")
+
   def tokens(toTokenize) do
     {:ok, tokens, _} = toTokenize |> to_char_list |> :pddl.string
     tokens

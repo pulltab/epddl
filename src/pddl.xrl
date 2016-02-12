@@ -10,12 +10,14 @@ IDENTIFIER  =   \?{NAME}
 
 DEFINE          =   define
 DOMAIN          =   domain
+REQUIREMENTS    =   :requirements
 PREDICATES      =   :predicates
 ACTION          =   :action
 PARAMETERS      =   :parameters
 PRECONDITION    =   :precondition
 EFFECT          =   :effect
 TYPES           =   :types
+REQUIREMENT     =   :{NAME}
 
 AND             =   and
 OR              =   or
@@ -38,14 +40,15 @@ Rules.
 {PRECONDITION}  : {token, {precondition, TokenLine}}.
 {EFFECT}        : {token, {effect, TokenLine}}.
 {TYPES}         : {token, {types, TokenLine}}.
+{REQUIREMENTS}  : {token, {requirements, TokenLine}}.
 
 \(              : {token, {'(', TokenLine}}.
 \)              : {token, {')', TokenLine}}.
 \-              : {token, {'-', TokenLine}}.
 
 {INT}           : {token, {int, TokenLine, TokenChars}}.
-{NAME}          : {token, {name, TokenLine, TokenChars}}.
-{IDENTIFIER}    : [$?|ID] = TokenChars, {token, {name, TokenLine, ID}}.
+{NAME}          : {token, {name, TokenLine, list_to_binary(TokenChars)}}.
+{IDENTIFIER}    : [$?|ID] = TokenChars, {token, {name, TokenLine, list_to_binary(ID)}}.
 
 {WHITESPACE}+   : skip_token.
 
