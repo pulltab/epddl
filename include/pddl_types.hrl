@@ -9,9 +9,9 @@
 
 -record(action,
     {id,
-     parameters,
-     preconditions,
-     effects
+     parameters = [],
+     precondition = true,
+     effect
     }).
 
 -record(predicate,

@@ -1,19 +1,20 @@
-# Epddl
+# EPPDL
 
-**TODO: Add description**
+A domain specific parser / interpreter for Elixir inspired by PDDL.
 
-## Installation
+# Requirements
 
-If [available in Hex](https://hex.pm/docs/publish), the package can be installed as:
+* Elixir 1.1.1 or newer
+* Erlang 18 or newer
 
-  1. Add epddl to your list of dependencies in `mix.exs`:
+## Features
 
-        def deps do
-          [{:epddl, "~> 0.0.1"}]
-        end
+Working towards an initial release...
 
-  2. Ensure epddl is started before your application:
+## Building
 
-        def application do
-          [applications: [:epddl]]
-        end
+make
+
+## Running Unit Tests
+
+make check

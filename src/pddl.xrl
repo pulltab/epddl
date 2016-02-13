@@ -35,6 +35,7 @@ Rules.
 
 {DEFINE}        : {token, {define, TokenLine}}.
 {DOMAIN}        : {token, {domain, TokenLine}}.
+{PARAMETERS}    : {token, {parameters, TokenLine}}.
 {PREDICATES}    : {token, {predicates, TokenLine}}.
 {ACTION}        : {token, {action, TokenLine}}.
 {PRECONDITION}  : {token, {precondition, TokenLine}}.

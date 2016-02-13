@@ -2,9 +2,8 @@ Nonterminals    definition
                 domainExpr domainPropList domainProp
                 typesExpr predicatesExpr
                 predicate predicateDef predicateDefList
-                actionDefList actionDef actionParameters
-                actionPreconditions actionEffects actionEffect
-                actionEffectExprList actionEffectExpr
+                actionDefList actionDef
+                actionPropList actionProp
                 varDef varDefList
                 boolOp boolMultiOp boolExpr boolExprList
                 id idList
@@ -14,10 +13,11 @@ Terminals       '(' ')' '-'
                 and or not
                 define
                 predicates
-                preconditions
+                parameters
+                precondition
                 types
                 action
-                effects
+                effect
                 domain
                 name.
 
@@ -42,7 +42,7 @@ domainPropList ->
     domainProp : ['$1'].
 domainPropList ->
     domainProp domainPropList : ['$1'|'$2'].
- 
+
 typesExpr ->
     '(' types idList ')' : require(typing), '$3'.
 
@@ -57,8 +57,8 @@ predicateDefList ->
 predicateDefList ->
     predicateDef predicateDefList : ['$1'|'$2'].
 
-%% NOTE:  These two rules introduce a shift/reduce conflict. 
-varDef -> idList '-' type : 
+%% NOTE:  These two rules introduce a shift/reduce conflict.
+varDef -> idList '-' type :
     require(typing),
     Type='$3',
     [#var{id=ID, type=Type} || ID <- '$1'].
@@ -84,33 +84,24 @@ actionDefList ->
     actionDef actionDefList : ['$1'|'$2'].
 
 actionDef ->
-    '(' action id actionParameters actionPreconditions actionEffects ')' : #action{id='$3', parameters='$4', preconditions='$5', effects='$6'}.
+    '(' action id actionPropList ')' :
+            PropsMap = maps:from_list('$4'),
+            #action{id='$3',
+                    parameters = maps:get(parameters, PropsMap, []),
+                    precondition = maps:get(precondition, PropsMap, true),
+                    effect = maps:get(effect, PropsMap, undefined)}.
 
-actionParameters ->
-    varDefList : '$1'.
+actionPropList ->
+    actionProp : ['$1'].
+actionPropList ->
+    actionProp actionPropList : ['$1'|'$2'].
 
-actionPreconditions ->
-    preconditions boolExpr : {preconditions, '$2'}.
-
-actionEffects ->
-   effects actionEffect : {effect, '$2'}.
-
-actionEffect ->
-   '(' ')' : undefined.
-actionEffect -> 
-   actionEffectExpr : '$1'.
-
-actionEffectExpr ->
-   predicate : '$1'.
-actionEffectExpr ->
-   '(' not predicate ')' : {'not', '$3'}.
-actionEffectExpr ->
-   '(' and actionEffectExprList ')'.
-   
-actionEffectExprList ->
-    actionEffectExpr : '$1'.
-actionEffectExprList ->
-    actionEffectExpr actionEffectExprList : ['$1'|'$2'].
+actionProp ->
+    parameters '(' varDefList ')' : {parameters, '$3'}.
+actionProp ->
+    precondition boolExpr : {precondition, '$2'}.
+actionProp ->
+    effect boolExpr : {effect, '$2'}.
 
 boolMultiOp -> and : 'and'.
 boolMultiOp -> or : 'or'.
@@ -121,17 +112,18 @@ predicate ->
     '(' id idList ')' : {predicate, '$2', '$3'}.
 
 boolExprList ->
-    boolExpr : '$1'.
+    boolExpr : ['$1'].
 boolExprList ->
     boolExpr boolExprList : ['$1'|'$2'].
 
+boolExpr ->
+    '(' ')' : true.
 boolExpr ->
     predicate : '$1'.
 boolExpr ->
     '(' boolMultiOp boolExprList ')' : {'$2', '$3'}.
 boolExpr ->
     '(' boolOp boolExpr ')' : {'$2', '$3'}.
-
 
 Erlang code.
 
@@ -160,7 +152,6 @@ tab2list(Tab) ->
 
 require(Req) ->
     ensure_table(?REQUIREMENTS_TID),
-    error_logger:info_msg("Pid: ~p, Requiring: ~p", [self(), Req]),
     ets:insert(?REQUIREMENTS_TID, {atom_to_binary(Req, utf8), true}).
 
 to_domain(ID, []) ->

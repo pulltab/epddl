@@ -28,4 +28,32 @@ defmodule EpddlDomainTest do
                                                 {:var, "l", :undefined}])
   end
 
+  test "Simple Action" do
+    domainStr = "(define (domain foo) (:action bar :effect()))"
+    domain = EPDDL.parse(domainStr)
+
+    assert(length(EPDDL.domain(domain, :actions)) == 1)
+    [bar] = EPDDL.domain(domain, :actions)
+    assert(EPDDL.action(bar, :id) == "bar")
+    assert(EPDDL.action(bar, :parameters) == [])
+    assert(EPDDL.action(bar, :precondition) == true)
+    assert(EPDDL.action(bar, :effect) == true)
+  end
+
+  test "Action Effects" do
+    domainStr = "(define (domain foo) (:action bar :effect (and (at ?v) (at
+  ?b) (not (loc ?c ?d)))))"
+    domain = EPDDL.parse(domainStr)
+
+    [bar] = EPDDL.domain(domain, :actions)
+
+    assert(EPDDL.action(bar, :effect) != :undefined)
+
+    {:and, [at1, at2, notExpr]} = EPDDL.action(bar, :effect)
+    {:predicate, "at", ["v"]} = at1
+    {:predicate, "at", ["b"]} = at2
+
+    {:not, loc} = notExpr
+    {:predicate, "loc", ["c", "d"]} = loc
+  end
 end

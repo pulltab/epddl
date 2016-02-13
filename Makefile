@@ -15,7 +15,10 @@ clean:
 	mix clean
 
 .PHONY: test
-test:
+test: check
+
+.PHONY: check
+check:
 	mix test
 
 .PHONY: deps
