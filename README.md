@@ -1,6 +1,6 @@
 # EPPDL
 
-A domain specific parser / interpreter for Elixir inspired by PDDL.
+A domain specific language / parser / interpreter for planning inspired by PDDL.
 
 # Requirements
 
@@ -13,8 +13,8 @@ Working towards an initial release...
 
 ## Building
 
-make
+    make
 
 ## Running Unit Tests
 
-make check
+    make check
