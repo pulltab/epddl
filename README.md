@@ -1,4 +1,4 @@
-# EPPDL
+# EPDDL
 
 A domain specific language / parser / interpreter for planning inspired by PDDL.
 
