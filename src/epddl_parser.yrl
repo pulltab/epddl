@@ -4,6 +4,8 @@ Nonterminals    definition
                 predicate predicateDef predicateDefList
                 actionDefList actionDef
                 actionPropList actionProp
+                effectExpr effectExprList
+                probabilisticEffect probabilisticEffectList
                 varDef varDefList
                 boolOp boolMultiOp boolExpr boolExprList
                 id idList
@@ -19,6 +21,8 @@ Terminals       '(' ')' '-'
                 action
                 effect
                 domain
+                probabilistic
+                float
                 name.
 
 Rootsymbol definition.
@@ -78,6 +82,10 @@ idList ->
 
 type -> name : extract('$1').
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Actions
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 actionDefList ->
     actionDef : ['$1'].
 actionDefList ->
@@ -101,7 +109,37 @@ actionProp ->
 actionProp ->
     precondition boolExpr : {precondition, '$2'}.
 actionProp ->
-    effect boolExpr : {effect, '$2'}.
+    effect effectExpr : {effect, '$2'}.
+
+effectExpr ->
+    '(' ')' : true.
+effectExpr ->
+    predicate : '$1'.
+effectExpr ->
+    '(' probabilistic probabilisticEffectList ')' :
+            require('probabilistic-effects'),
+            true.
+effectExpr ->
+    '(' boolMultiOp effectExprList ')' : {'$2', '$3'}.
+effectExpr ->
+    '(' boolOp effectExpr ')' : {'$2', '$3'}.
+
+effectExprList ->
+    effectExpr : ['$1'].
+effectExprList ->
+    effectExpr effectExprList : ['$1'|'$2'].
+
+probabilisticEffect ->
+    float effectExpr : {extract('$1'), '$2'}.
+
+probabilisticEffectList ->
+    probabilisticEffect : ['$1'].
+probabilisticEffectList ->
+    probabilisticEffect probabilisticEffectList : ['$1'|'$2'].
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Bool Expressions
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 boolMultiOp -> and : 'and'.
 boolMultiOp -> or : 'or'.
