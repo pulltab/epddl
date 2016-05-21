@@ -48,7 +48,6 @@ action_parameters_test() ->
     C = {var, <<"c">>, undefined},
     ?assert(Bar#action.parameters == [A, B, C]).
 
-
 simple_action_precondition_test() ->
     DomainStr = "(define (domain foo) (:action bar :precondition (and (at ?x ?y) (isCar ?y))))",
     Domain = epddl:parse(DomainStr),
