@@ -5,26 +5,22 @@ all: deps compile
 
 .PHONY: compile
 compile:
-	mix compile
+	rebar3 compile
 
 .PHONY: clean-all
 clean-all: clean
 
 .PHONY: clean
 clean:
-	mix clean
+	rebar3 clean
 
 .PHONY: test
 test: check
 
 .PHONY: check
 check:
-	mix test
+	rebar3 eunit
 
 .PHONY: deps
 deps:
-	mix deps.get
-
-.PHONY: shell
-shell: all
-	iex -S mix
+	rebar3 deps

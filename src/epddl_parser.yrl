@@ -127,7 +127,7 @@ boolExpr ->
 
 Erlang code.
 
--include("../include/pddl_types.hrl").
+-include("../include/epddl_types.hrl").
 
 -define(REQUIREMENTS_TID, epddl_requirements).
 

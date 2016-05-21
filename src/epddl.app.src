@@ -1,0 +1,15 @@
+{application, epddl,
+ [
+  {description, "epddl - Planning DSL inspired by PDDL."},
+  {vsn, "0.0.1"},
+  {registered, []},
+  {applications,
+   [
+   ]},
+  {env,[]},
+  {modules, []},
+  {maintainers, []},
+  {licenses, []},
+  {links, []}
+ ]
+}.

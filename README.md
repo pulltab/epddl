@@ -4,8 +4,8 @@ A domain specific language / parser / interpreter for planning inspired by PDDL.
 
 ## Requirements
 
-* Elixir 1.1.1 or newer
 * Erlang 18 or newer
+* Rebar3
 
 ## Features
 

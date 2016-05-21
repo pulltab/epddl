@@ -1,7 +1,9 @@
 /_build
 /cover
 /deps
-src/pddl.erl
-src/pddl_parser.erl
+src/epddl_tokenizer.erl
+src/epddl_parser.erl
 erl_crash.dump
 *.ez
+*.swp
+*.swo
