@@ -9,7 +9,7 @@ prob_effect_requires_probabilistic_effects_test() ->
     Domain = epddl:parse(DomainStr),
     [<<"probabilistic-effects">>] = Domain#domain.requirements.
 
-prob_effects_sum_to_1_test() ->
+prob_effect_sum_less_than_1_test() ->
     DomainStr = "(define (domain foo) (:action bar :effect (probabilistic 0.40 () 0.37 ())))",
     Domain = epddl:parse(DomainStr),
     [Bar] = Domain#domain.actions,
