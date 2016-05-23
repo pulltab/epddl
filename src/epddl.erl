@@ -5,6 +5,10 @@
          parse_file/1
         ]).
 
+%%%===================================================================
+%%% API
+%%%===================================================================
+
 tokens(String) when is_list(String) ->
     {ok, Tokens, _} = epddl_tokenizer:string(String),
     Tokens;
@@ -19,7 +23,11 @@ parse(String) ->
 parse_file(Filename) ->
 	{ok, FileContents} = read_lines(Filename),
 	parse(FileContents).
-	
+
+%%%===================================================================
+%%% Internal Functions
+%%%===================================================================
+
 read_lines(FileName) ->
     {ok, Device} = file:open(FileName, [read]),
     try
@@ -29,7 +37,8 @@ read_lines(FileName) ->
     end.
 
 get_all_lines(Device) ->
-    case io:get_line(Device, "") of
-        eof  -> [];
-        Line -> Line ++ get_all_lines(Device)
-    end.
+    Lines = case io:get_line(Device, "") of
+                eof  -> [];
+                Line -> Line ++ get_all_lines(Device)
+            end,
+    {ok, Lines}.
