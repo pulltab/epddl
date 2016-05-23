@@ -12,7 +12,7 @@ empty_domain_test() ->
     ?assert(DomainDef#domain.id == <<"foo">>).
 
 simple_action_test() ->
-    DomainStr = "(define (domain foo) (:action bar :effect()))",
+    DomainStr = "(define (domain foo) (:action bar :effect ()))",
     Domain = epddl:parse(DomainStr),
 
     ?assert(length(Domain#domain.actions) == 1),
@@ -37,3 +37,22 @@ action_effect_test() ->
     {'not', Loc} = NotExpr,
     {predicate, <<"loc">>, [<<"c">>, <<"d">>]} = Loc.
 
+action_parameters_test() ->
+    DomainStr = "(define (domain foo) (:action bar :parameters (?a ?b ?c)))",
+    Domain = epddl:parse(DomainStr),
+
+    [Bar] = Domain#domain.actions,
+
+    A = {var, <<"a">>, undefined},
+    B = {var, <<"b">>, undefined},
+    C = {var, <<"c">>, undefined},
+    ?assert(Bar#action.parameters == [A, B, C]).
+
+simple_action_precondition_test() ->
+    DomainStr = "(define (domain foo) (:action bar :precondition (and (at ?x ?y) (isCar ?y))))",
+    Domain = epddl:parse(DomainStr),
+
+    [Bar] = Domain#domain.actions,
+    {'and', [At, IsCar]} = Bar#action.precondition,
+    {predicate, <<"at">>, [<<"x">>, <<"y">>]} = At,
+    {predicate, <<"isCar">>, [<<"y">>]} = IsCar.

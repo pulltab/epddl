@@ -5,6 +5,7 @@ DIGIT       =   [0-9]
 LETTER      =   [a-z,A-Z]
 CHAR        =   ({LETTER}|{DIGIT})
 INT         =   {DIGIT}+
+FLOAT       =   {INT}\.{INT}
 NAME        =   {LETTER}{CHAR}*
 IDENTIFIER  =   \?{NAME}
 
@@ -21,6 +22,7 @@ REQUIREMENT     =   :{NAME}
 
 AND             =   and
 OR              =   or
+PROBABILISTIC   =   probabilistic
 NOT             =   not
 FORALL          =   forall
 EXISTS          =   exists
@@ -29,6 +31,7 @@ Rules.
 
 {AND}           : {token, {'and', TokenLine}}.
 {OR}            : {token, {'or', TokenLine}}.
+{PROBABILISTIC} : {token, {'probabilistic', TokenLine}}.
 {NOT}           : {token, {'not', TokenLine}}.
 {FORALL}        : {token, {'forall', TokenLine}}.
 {EXISTS}        : {token, {'exists', TokenLine}}.
@@ -47,7 +50,8 @@ Rules.
 \)              : {token, {')', TokenLine}}.
 \-              : {token, {'-', TokenLine}}.
 
-{INT}           : {token, {int, TokenLine, TokenChars}}.
+{FLOAT}         : {token, {float, TokenLine, list_to_float(TokenChars)}}.
+{INT}           : {token, {int, TokenLine, list_to_integer(TokenChars)}}.
 {NAME}          : {token, {name, TokenLine, list_to_binary(TokenChars)}}.
 {IDENTIFIER}    : [$?|ID] = TokenChars, {token, {name, TokenLine, list_to_binary(ID)}}.
 

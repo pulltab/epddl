@@ -4,6 +4,8 @@ Nonterminals    definition
                 predicate predicateDef predicateDefList
                 actionDefList actionDef
                 actionPropList actionProp
+                effectExpr effectExprList
+                probabilisticEffect probabilisticEffectList
                 varDef varDefList
                 boolOp boolMultiOp boolExpr boolExprList
                 id idList
@@ -19,6 +21,8 @@ Terminals       '(' ')' '-'
                 action
                 effect
                 domain
+                probabilistic
+                float
                 name.
 
 Rootsymbol definition.
@@ -78,6 +82,10 @@ idList ->
 
 type -> name : extract('$1').
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Actions
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 actionDefList ->
     actionDef : ['$1'].
 actionDefList ->
@@ -101,7 +109,55 @@ actionProp ->
 actionProp ->
     precondition boolExpr : {precondition, '$2'}.
 actionProp ->
-    effect boolExpr : {effect, '$2'}.
+    effect effectExpr : {effect, '$2'}.
+
+effectExpr ->
+    '(' ')' : true.
+effectExpr ->
+    predicate : '$1'.
+effectExpr ->
+    '(' probabilistic probabilisticEffectList ')' :
+            require('probabilistic-effects'),
+            ProbEffects = '$3',
+            Sum = fun({Val, _}, Acc) -> Val + Acc end,
+            Total = lists:foldl(Sum, 0, ProbEffects),
+            NewProbEffects =
+                if
+                    Total > 1 ->
+                        %% Constraint violation
+                        error(bad_probabilistic);
+
+                    Total < 1 ->
+                        Diff = 1.0 - Total,
+                        RoundedDiff = round(Diff * math:pow(10, 2)) / math:pow(10, 2),
+                        [{RoundedDiff, true}|ProbEffects];
+
+                    true ->
+                        ProbEffects
+                end,
+            {probabilistic, NewProbEffects}.
+
+effectExpr ->
+    '(' boolMultiOp effectExprList ')' : {'$2', '$3'}.
+effectExpr ->
+    '(' boolOp effectExpr ')' : {'$2', '$3'}.
+
+effectExprList ->
+    effectExpr : ['$1'].
+effectExprList ->
+    effectExpr effectExprList : ['$1'|'$2'].
+
+probabilisticEffect ->
+    float effectExpr : {extract('$1'), '$2'}.
+
+probabilisticEffectList ->
+    probabilisticEffect : ['$1'].
+probabilisticEffectList ->
+    probabilisticEffect probabilisticEffectList : ['$1'|'$2'].
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Bool Expressions
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 boolMultiOp -> and : 'and'.
 boolMultiOp -> or : 'or'.
@@ -154,15 +210,28 @@ require(Req) ->
     ensure_table(?REQUIREMENTS_TID),
     ets:insert(?REQUIREMENTS_TID, {atom_to_binary(Req, utf8), true}).
 
+cleanup() ->
+    try
+        true = ets:delete(?REQUIREMENTS_TID)
+    catch
+        _:_ ->
+            true
+    end.
+
 to_domain(ID, []) ->
-    #domain{id=ID};
+    Domain = #domain{id=ID},
+    cleanup(),
+    Domain;
 to_domain(ID, PropList) ->
     DomainMap = maps:from_list(PropList),
     Requirements = [Req || {Req, true} <- tab2list(?REQUIREMENTS_TID)],
-    #domain{
-        id = ID,
-        requirements = Requirements,
-        types = maps:get(types, DomainMap, []),
-        predicates = maps:get(predicates, DomainMap, []),
-        actions = maps:get(actions, DomainMap, [])
-    }.
+    Domain =
+        #domain{
+            id = ID,
+            requirements = Requirements,
+            types = maps:get(types, DomainMap, []),
+            predicates = maps:get(predicates, DomainMap, []),
+            actions = maps:get(actions, DomainMap, [])
+        },
+    cleanup(),
+    Domain.
