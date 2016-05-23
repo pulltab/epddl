@@ -192,15 +192,28 @@ require(Req) ->
     ensure_table(?REQUIREMENTS_TID),
     ets:insert(?REQUIREMENTS_TID, {atom_to_binary(Req, utf8), true}).
 
+cleanup() ->
+    try
+        true = ets:delete(?REQUIREMENTS_TID)
+    catch
+        _:_ ->
+            true
+    end.
+
 to_domain(ID, []) ->
-    #domain{id=ID};
+    Domain = #domain{id=ID},
+    cleanup(),
+    Domain;
 to_domain(ID, PropList) ->
     DomainMap = maps:from_list(PropList),
     Requirements = [Req || {Req, true} <- tab2list(?REQUIREMENTS_TID)],
-    #domain{
-        id = ID,
-        requirements = Requirements,
-        types = maps:get(types, DomainMap, []),
-        predicates = maps:get(predicates, DomainMap, []),
-        actions = maps:get(actions, DomainMap, [])
-    }.
+    Domain =
+        #domain{
+            id = ID,
+            requirements = Requirements,
+            types = maps:get(types, DomainMap, []),
+            predicates = maps:get(predicates, DomainMap, []),
+            actions = maps:get(actions, DomainMap, [])
+        },
+    cleanup(),
+    Domain.
