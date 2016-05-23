@@ -118,7 +118,25 @@ effectExpr ->
 effectExpr ->
     '(' probabilistic probabilisticEffectList ')' :
             require('probabilistic-effects'),
-            true.
+            ProbEffects = '$3',
+            Sum = fun({Val, _}, Acc) -> Val + Acc end,
+            Total = lists:foldl(Sum, 0, ProbEffects),
+            NewProbEffects =
+                if
+                    Total > 1 ->
+                        %% Constraint violation
+                        error(bad_probabilistic);
+
+                    Total < 1 ->
+                        Diff = 1.0 - Total,
+                        RoundedDiff = round(Diff * math:pow(10, 2)) / math:pow(10, 2),
+                        [{RoundedDiff, true}|ProbEffects];
+
+                    true ->
+                        ProbEffects
+                end,
+            {probabilistic, NewProbEffects}.
+
 effectExpr ->
     '(' boolMultiOp effectExprList ')' : {'$2', '$3'}.
 effectExpr ->

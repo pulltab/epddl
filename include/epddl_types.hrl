@@ -13,7 +13,8 @@
 -type bool_multi_op() :: 'and' | 'or'.
 -type bool_expr() :: #predicate{} |
                      {bool_op(), bool_expr()} |
-                     {bool_multi_op(), list(bool_expr())}.
+                     {bool_multi_op(), list(bool_expr())} |
+                     {probabilistic, list({float(), bool_expr()})}.
 
 -record(action,
     {id :: undefined | binary(),
