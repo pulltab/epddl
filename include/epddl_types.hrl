@@ -16,11 +16,14 @@
                      | {bool_op(), bool_expr()}
                      | {bool_multi_op(), list(bool_expr())}.
 
--type time_specifier() :: 'undefined' | 'start' | 'end'.
 -record(effect,
     {
-     delta = true :: bool_expr() | [{float(), #effect{}}],
-     time = undefined :: time_specifier()
+     delta = true :: true
+                     | #predicate{}
+                     | {bool_op(), #predicate{}}
+                     | {bool_multi_op(), list(#effect{})}
+                     | list({float(), #effect{}}),
+     time = undefined :: undefined | 'start' | 'end'
     }).
 -type effect_expr() :: #effect{}.
 
