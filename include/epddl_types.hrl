@@ -16,9 +16,14 @@
                      {bool_multi_op(), list(bool_expr())} |
                      {probabilistic, list({float(), bool_expr()})}.
 
+-type number_expr() :: number().
+-type duration_constraint_op() :: '=' | '<=' | '>='.
+-type duration_constraint() :: {duration_constraint_op(), number_expr()}.
+
 -record(action,
     {id :: undefined | binary(),
      parameters = [] :: list(binary()),
+     duration :: undefined | duration_constraint(),
      precondition = true :: boolean() | list(bool_expr()),
      effect = [] :: list(bool_expr())
     }).

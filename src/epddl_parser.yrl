@@ -6,12 +6,14 @@ Nonterminals    definition
                 actionPropList actionProp
                 effectExpr effectExprList
                 probabilisticEffect probabilisticEffectList
+                durationConstraints durationConstraint durationConstraintOp
                 varDef varDefList
                 boolOp boolMultiOp boolExpr boolExprList
                 id idList
+                numberExpr
                 type.
 
-Terminals       '(' ')' '-'
+Terminals       '(' ')' '-' '=' '<' '>'
                 and or not
                 define
                 predicates
@@ -22,7 +24,8 @@ Terminals       '(' ')' '-'
                 effect
                 domain
                 probabilistic
-                float
+                duration
+                number
                 name.
 
 Rootsymbol definition.
@@ -97,7 +100,9 @@ actionDef ->
             #action{id='$3',
                     parameters = maps:get(parameters, PropsMap, []),
                     precondition = maps:get(precondition, PropsMap, true),
-                    effect = maps:get(effect, PropsMap, undefined)}.
+                    effect = maps:get(effect, PropsMap, undefined),
+                    duration = maps:get(duration, PropsMap, undefined)
+                   }.
 
 actionPropList ->
     actionProp : ['$1'].
@@ -110,6 +115,10 @@ actionProp ->
     precondition boolExpr : {precondition, '$2'}.
 actionProp ->
     effect effectExpr : {effect, '$2'}.
+actionProp ->
+    duration durationConstraints :
+        require('durative-actions'),
+        {duration, '$2'}.
 
 effectExpr ->
     '(' ')' : true.
@@ -148,12 +157,39 @@ effectExprList ->
     effectExpr effectExprList : ['$1'|'$2'].
 
 probabilisticEffect ->
-    float effectExpr : {extract('$1'), '$2'}.
+    number effectExpr : {extract('$1'), '$2'}.
 
 probabilisticEffectList ->
     probabilisticEffect : ['$1'].
 probabilisticEffectList ->
     probabilisticEffect probabilisticEffectList : ['$1'|'$2'].
+
+durationConstraints ->
+    '(' 'and' durationConstraint durationConstraints ')' : lists:flatten(['$3'|'$4']).
+durationConstraints ->
+    durationConstraint : ['$1'].
+
+durationConstraint ->
+    '(' ')' : undefined.
+durationConstraint ->
+    '(' durationConstraintOp id numberExpr ')' :
+        if
+            '$3' == <<"duration">> ->
+                 {'$2', '$4'};
+            true ->
+                error({bad_durative_constraint, '$3'})
+        end.
+
+durationConstraintOp ->
+    '=' : '='.
+durationConstraintOp ->
+    '<' '=' :
+        require('duration-inequalities'),
+        '<='.
+durationConstraintOp ->
+    '>' '=' :
+        require('duration-inequalities'),
+        '>='.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Bool Expressions
@@ -180,6 +216,17 @@ boolExpr ->
     '(' boolMultiOp boolExprList ')' : {'$2', '$3'}.
 boolExpr ->
     '(' boolOp boolExpr ')' : {'$2', '$3'}.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Number Expressions
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+numberExpr ->
+   number : extract('$1').
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Erlang Code
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 Erlang code.
 
