@@ -11,6 +11,9 @@ IDENTIFIER  =   \?{NAME}
 
 DEFINE          =   define
 DOMAIN          =   domain
+AT              =   at
+START           =   start
+END             =   end
 REQUIREMENTS    =   :requirements
 PREDICATES      =   :predicates
 ACTION          =   :action
@@ -47,6 +50,9 @@ Rules.
 {EFFECT}        : {token, {effect, TokenLine}}.
 {TYPES}         : {token, {types, TokenLine}}.
 {REQUIREMENTS}  : {token, {requirements, TokenLine}}.
+{AT}            : {token, {at, TokenLine}}.
+{START}         : {token, {'start', TokenLine}}.
+{END}           : {token, {'end', TokenLine}}.
 
 \(              : {token, {'(', TokenLine}}.
 \)              : {token, {')', TokenLine}}.

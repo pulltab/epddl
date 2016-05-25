@@ -6,7 +6,7 @@ Nonterminals    definition
                 actionPropList actionProp
                 effectExpr effectExprList
                 probabilisticEffect probabilisticEffectList
-                durationConstraints durationConstraint durationConstraintOp
+                timeSpecifier durationConstraints durationConstraint durationConstraintOp
                 varDef varDefList
                 boolOp boolMultiOp boolExpr boolExprList
                 id idList
@@ -15,6 +15,7 @@ Nonterminals    definition
 
 Terminals       '(' ')' '-' '=' '<' '>'
                 and or not
+                at start end
                 define
                 predicates
                 parameters
@@ -120,10 +121,19 @@ actionProp ->
         require('durative-actions'),
         {duration, '$2'}.
 
+timeSpecifier ->
+    'start' : 'start'.
+timeSpecifier ->
+    'end'   : 'end'.
+
 effectExpr ->
-    '(' ')' : true.
+    '(' ')' : #effect{}.
 effectExpr ->
-    predicate : '$1'.
+    predicate : #effect{delta='$1'}.
+effectExpr ->
+    '(' boolOp  predicate ')' : #effect{delta={'$2', '$3'}}.
+effectExpr ->
+    '(' boolMultiOp effectExprList ')' : #effect{delta={'$2', '$3'}}.
 effectExpr ->
     '(' probabilistic probabilisticEffectList ')' :
             require('probabilistic-effects'),
@@ -139,17 +149,16 @@ effectExpr ->
                     Total < 1 ->
                         Diff = 1.0 - Total,
                         RoundedDiff = round(Diff * math:pow(10, 2)) / math:pow(10, 2),
-                        [{RoundedDiff, true}|ProbEffects];
+                        [{RoundedDiff, #effect{delta=true}}|ProbEffects];
 
                     true ->
                         ProbEffects
                 end,
-            {probabilistic, NewProbEffects}.
-
+            #effect{delta=NewProbEffects}.
 effectExpr ->
-    '(' boolMultiOp effectExprList ')' : {'$2', '$3'}.
-effectExpr ->
-    '(' boolOp effectExpr ')' : {'$2', '$3'}.
+    '(' 'at' timeSpecifier effectExpr ')' :
+        Effect = '$4',
+        Effect#effect{time = '$3'}.
 
 effectExprList ->
     effectExpr : ['$1'].
