@@ -6,13 +6,16 @@ Nonterminals    definition
                 actionPropList actionProp
                 effectExpr effectExprList
                 probabilisticEffect probabilisticEffectList
+                timeSpecifier durationConstraints durationConstraint durationConstraintOp
                 varDef varDefList
                 boolOp boolMultiOp boolExpr boolExprList
                 id idList
+                numberExpr
                 type.
 
-Terminals       '(' ')' '-'
+Terminals       '(' ')' '-' '=' '<' '>'
                 and or not
+                at start end
                 define
                 predicates
                 parameters
@@ -22,7 +25,8 @@ Terminals       '(' ')' '-'
                 effect
                 domain
                 probabilistic
-                float
+                duration
+                number
                 name.
 
 Rootsymbol definition.
@@ -97,7 +101,9 @@ actionDef ->
             #action{id='$3',
                     parameters = maps:get(parameters, PropsMap, []),
                     precondition = maps:get(precondition, PropsMap, true),
-                    effect = maps:get(effect, PropsMap, undefined)}.
+                    effect = maps:get(effect, PropsMap, undefined),
+                    duration = maps:get(duration, PropsMap, undefined)
+                   }.
 
 actionPropList ->
     actionProp : ['$1'].
@@ -110,11 +116,24 @@ actionProp ->
     precondition boolExpr : {precondition, '$2'}.
 actionProp ->
     effect effectExpr : {effect, '$2'}.
+actionProp ->
+    duration durationConstraints :
+        require('durative-actions'),
+        {duration, '$2'}.
+
+timeSpecifier ->
+    'start' : 'start'.
+timeSpecifier ->
+    'end'   : 'end'.
 
 effectExpr ->
-    '(' ')' : true.
+    '(' ')' : #effect{}.
 effectExpr ->
-    predicate : '$1'.
+    predicate : #effect{delta='$1'}.
+effectExpr ->
+    '(' boolOp  predicate ')' : #effect{delta={'$2', '$3'}}.
+effectExpr ->
+    '(' boolMultiOp effectExprList ')' : #effect{delta={'$2', '$3'}}.
 effectExpr ->
     '(' probabilistic probabilisticEffectList ')' :
             require('probabilistic-effects'),
@@ -130,17 +149,16 @@ effectExpr ->
                     Total < 1 ->
                         Diff = 1.0 - Total,
                         RoundedDiff = round(Diff * math:pow(10, 2)) / math:pow(10, 2),
-                        [{RoundedDiff, true}|ProbEffects];
+                        [{RoundedDiff, #effect{delta=true}}|ProbEffects];
 
                     true ->
                         ProbEffects
                 end,
-            {probabilistic, NewProbEffects}.
-
+            #effect{delta=NewProbEffects}.
 effectExpr ->
-    '(' boolMultiOp effectExprList ')' : {'$2', '$3'}.
-effectExpr ->
-    '(' boolOp effectExpr ')' : {'$2', '$3'}.
+    '(' 'at' timeSpecifier effectExpr ')' :
+        Effect = '$4',
+        Effect#effect{time = '$3'}.
 
 effectExprList ->
     effectExpr : ['$1'].
@@ -148,12 +166,38 @@ effectExprList ->
     effectExpr effectExprList : ['$1'|'$2'].
 
 probabilisticEffect ->
-    float effectExpr : {extract('$1'), '$2'}.
+    number effectExpr : {extract('$1'), '$2'}.
 
 probabilisticEffectList ->
     probabilisticEffect : ['$1'].
 probabilisticEffectList ->
     probabilisticEffect probabilisticEffectList : ['$1'|'$2'].
+
+durationConstraints ->
+    '(' 'and' durationConstraint durationConstraints ')' : lists:flatten(['$3'|'$4']).
+durationConstraints ->
+    durationConstraint : ['$1'].
+
+durationConstraint ->
+    '(' ')' :
+        undefined.
+durationConstraint ->
+    numberExpr :
+        {'=', '$1'}.
+durationConstraint ->
+    '(' durationConstraintOp numberExpr ')' :
+        {'$2', '$3'}.
+
+durationConstraintOp ->
+    '=' : '='.
+durationConstraintOp ->
+    '<' '=' :
+        require('duration-inequalities'),
+        '<='.
+durationConstraintOp ->
+    '>' '=' :
+        require('duration-inequalities'),
+        '>='.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Bool Expressions
@@ -180,6 +224,17 @@ boolExpr ->
     '(' boolMultiOp boolExprList ')' : {'$2', '$3'}.
 boolExpr ->
     '(' boolOp boolExpr ')' : {'$2', '$3'}.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Number Expressions
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+numberExpr ->
+   number : extract('$1').
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Erlang Code
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 Erlang code.
 

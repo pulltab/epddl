@@ -11,16 +11,32 @@
 
 -type bool_op() :: 'not'.
 -type bool_multi_op() :: 'and' | 'or'.
--type bool_expr() :: #predicate{} |
-                     {bool_op(), bool_expr()} |
-                     {bool_multi_op(), list(bool_expr())} |
-                     {probabilistic, list({float(), bool_expr()})}.
+-type bool_expr() :: true
+                     | #predicate{}
+                     | {bool_op(), bool_expr()}
+                     | {bool_multi_op(), list(bool_expr())}.
+
+-record(effect,
+    {
+     delta = true :: true
+                     | #predicate{}
+                     | {bool_op(), #predicate{}}
+                     | {bool_multi_op(), list(#effect{})}
+                     | list({float(), #effect{}}),
+     time = undefined :: undefined | 'start' | 'end'
+    }).
+-type effect_expr() :: #effect{}.
+
+-type number_expr() :: number().
+-type duration_constraint_op() :: '=' | '<=' | '>='.
+-type duration_constraint() :: {duration_constraint_op(), number_expr()}.
 
 -record(action,
     {id :: undefined | binary(),
      parameters = [] :: list(binary()),
-     precondition = true :: boolean() | list(bool_expr()),
-     effect = [] :: list(bool_expr())
+     duration :: undefined | duration_constraint(),
+     precondition = true :: bool_expr(),
+     effect = #effect{} :: effect_expr()
     }).
 
 -record(domain,

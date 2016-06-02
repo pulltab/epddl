@@ -22,19 +22,22 @@ simple_action_test() ->
     ?assert(Bar#action.id == <<"bar">>),
     ?assert(Bar#action.parameters == []),
     ?assert(Bar#action.precondition == true),
-    ?assert(Bar#action.effect == true).
+    ?assert(Bar#action.effect == #effect{delta=true}).
 
 action_effect_test() ->
-    DomainStr = "(define (domain foo) (:action bar :effect (and (at ?v) (at ?b) (not (loc ?c ?d)))))",
+    DomainStr = "(define (domain foo) (:action bar :effect (and (loc ?v) (loc ?b) (not (loc ?c ?d)))))",
     Domain = epddl:parse(DomainStr),
 
     [Bar] = Domain#domain.actions,
     ?assert(Bar#action.effect /= undefined),
-    {'and', [At1, At2, NotExpr]} = Bar#action.effect,
-    
-    {predicate, <<"at">>, [<<"v">>]} = At1,
-    {predicate, <<"at">>, [<<"b">>]} = At2,
-    {'not', Loc} = NotExpr,
+
+    BarEffect = Bar#action.effect,
+    ?assert(is_record(BarEffect, effect)),
+    #effect{delta={'and', [Loc1, Loc2, NotExpr]}} = BarEffect,
+
+    #effect{delta={predicate, <<"loc">>, [<<"v">>]}} = Loc1,
+    #effect{delta={predicate, <<"loc">>, [<<"b">>]}} = Loc2,
+    #effect{delta={'not', Loc}} = NotExpr,
     {predicate, <<"loc">>, [<<"c">>, <<"d">>]} = Loc.
 
 action_parameters_test() ->
@@ -49,10 +52,10 @@ action_parameters_test() ->
     ?assert(Bar#action.parameters == [A, B, C]).
 
 simple_action_precondition_test() ->
-    DomainStr = "(define (domain foo) (:action bar :precondition (and (at ?x ?y) (isCar ?y))))",
+    DomainStr = "(define (domain foo) (:action bar :precondition (and (loc ?x ?y) (isCar ?y))))",
     Domain = epddl:parse(DomainStr),
 
     [Bar] = Domain#domain.actions,
-    {'and', [At, IsCar]} = Bar#action.precondition,
-    {predicate, <<"at">>, [<<"x">>, <<"y">>]} = At,
+    {'and', [Loc, IsCar]} = Bar#action.precondition,
+    {predicate, <<"loc">>, [<<"x">>, <<"y">>]} = Loc,
     {predicate, <<"isCar">>, [<<"y">>]} = IsCar.

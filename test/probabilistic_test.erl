@@ -14,13 +14,13 @@ prob_effect_sum_less_than_1_test() ->
     Domain = epddl:parse(DomainStr),
     [Bar] = Domain#domain.actions,
    
-    {probabilistic, Effect} = Bar#action.effect,
-    ?assert(is_list(Effect)),
+    #effect{delta=ProbEffect} = Bar#action.effect,
+    ?assert(is_list(ProbEffect)),
 
     %% Parsing should append an empty effect such that
     %% the probabilities all sum to 1.0. 
-    ?assert(3 == length(Effect)),
-    [] = [{0.23, true}, {0.40, true}, {0.37, true}] -- Effect.
+    ?assert(3 == length(ProbEffect)),
+    [] = [{0.23, #effect{}}, {0.40, #effect{}}, {0.37, #effect{}}] -- ProbEffect.
 
 prob_effect_sum_greater_than_1_test() ->
     DomainStr = "(define (domain foo) (:action bar :effect (probabilistic 0.75 () 1.0 ())))",
