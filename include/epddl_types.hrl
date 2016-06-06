@@ -16,10 +16,20 @@
                      | {bool_op(), bool_expr()}
                      | {bool_multi_op(), list(bool_expr())}.
 
+-type stringExpr() :: binary() | {binary(), [#var{}]}.
+-record(external_effect,
+    {
+      method :: binary(), %%<<"post">> | <<"get">> | <<"put">> | <<"patch">> | <<"delete">>
+      url :: stringExpr(),
+      headers :: stringExpr(),
+      body :: stringExpr()
+    }).
+
 -record(effect,
     {
      delta = true :: true
                      | #predicate{}
+                     | #external_effect{}
                      | {bool_op(), #predicate{}}
                      | {bool_multi_op(), list(#effect{})}
                      | list({float(), #effect{}}),
@@ -41,6 +51,7 @@
 
 -record(domain,
     {id :: undefined | binary(),
+     parameters = [] :: list(binary()),
      requirements = [] :: list(binary()),
      types = [] :: list(binary()),
      predicates = [] :: list(#predicate{}),

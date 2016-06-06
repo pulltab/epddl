@@ -1,10 +1,10 @@
 Nonterminals    definition
                 domainExpr domainPropList domainProp
-                typesExpr predicatesExpr
                 predicate predicateDef predicateDefList
                 actionDefList actionDef
                 actionPropList actionProp
                 effectExpr effectExprList
+                stringExpr
                 probabilisticEffect probabilisticEffectList
                 timeSpecifier durationConstraints durationConstraint durationConstraintOp
                 varDef varDefList
@@ -27,7 +27,8 @@ Terminals       '(' ')' '-' '=' '<' '>'
                 probabilistic
                 duration
                 number
-                name.
+                name
+                string.
 
 Rootsymbol definition.
 
@@ -39,23 +40,25 @@ domainExpr ->
 domainExpr ->
     '(' domain id ')' domainPropList : to_domain('$3', '$5').
 
-domainProp ->
-    typesExpr : {types, '$1'}.
-domainProp ->
-    predicatesExpr : {predicates, '$1'}.
-domainProp ->
-    actionDefList : {actions, '$1'}.
-
 domainPropList ->
     domainProp : ['$1'].
 domainPropList ->
     domainProp domainPropList : ['$1'|'$2'].
 
-typesExpr ->
-    '(' types idList ')' : require(typing), '$3'.
-
-predicatesExpr ->
-    '(' predicates predicateDefList ')' : '$3'.
+domainProp ->
+    '(' types idList ')' :
+        require(typing),
+        {types, '$3'}.
+domainProp ->
+    '(' predicates predicateDefList ')' :
+        {predicates, '$3'}.
+domainProp ->
+    '(' parameters idList ')' :
+        require('parameterized-domains'),
+        {parameters, '$3'}.
+domainProp ->
+    actionDefList :
+        {actions, '$1'}.
 
 predicateDef ->
     '(' id varDefList ')' : #predicate{id='$2', vars='$3'}.
@@ -136,34 +139,30 @@ effectExpr ->
     '(' boolMultiOp effectExprList ')' : #effect{delta={'$2', '$3'}}.
 effectExpr ->
     '(' probabilistic probabilisticEffectList ')' :
-            require('probabilistic-effects'),
-            ProbEffects = '$3',
-            Sum = fun({Val, _}, Acc) -> Val + Acc end,
-            Total = lists:foldl(Sum, 0, ProbEffects),
-            NewProbEffects =
-                if
-                    Total > 1 ->
-                        %% Constraint violation
-                        error(bad_probabilistic);
-
-                    Total < 1 ->
-                        Diff = 1.0 - Total,
-                        RoundedDiff = round(Diff * math:pow(10, 2)) / math:pow(10, 2),
-                        [{RoundedDiff, #effect{delta=true}}|ProbEffects];
-
-                    true ->
-                        ProbEffects
-                end,
-            #effect{delta=NewProbEffects}.
+        to_probabilistic_effect('$3').
 effectExpr ->
     '(' 'at' timeSpecifier effectExpr ')' :
         Effect = '$4',
         Effect#effect{time = '$3'}.
+effectExpr ->
+    '(' name stringExpr stringExpr stringExpr ')' :
+        to_external_effect(extract('$2'), '$3', '$4', '$5').
 
 effectExprList ->
     effectExpr : ['$1'].
 effectExprList ->
     effectExpr effectExprList : ['$1'|'$2'].
+
+stringExpr ->
+    string : extract('$1').
+stringExpr ->
+    '(' ')' : <<"">>.
+stringExpr ->
+    '(' string ')' :
+        extract('$2').
+stringExpr ->
+    '(' string idList ')' :
+        {extract('$2'), '$3'}.
 
 probabilisticEffect ->
     number effectExpr : {extract('$1'), '$2'}.
@@ -265,28 +264,60 @@ require(Req) ->
     ensure_table(?REQUIREMENTS_TID),
     ets:insert(?REQUIREMENTS_TID, {atom_to_binary(Req, utf8), true}).
 
-cleanup() ->
-    try
-        true = ets:delete(?REQUIREMENTS_TID)
-    catch
-        _:_ ->
-            true
-    end.
-
 to_domain(ID, []) ->
-    Domain = #domain{id=ID},
-    cleanup(),
-    Domain;
+    #domain{id=ID};
 to_domain(ID, PropList) ->
     DomainMap = maps:from_list(PropList),
     Requirements = [Req || {Req, true} <- tab2list(?REQUIREMENTS_TID)],
-    Domain =
-        #domain{
-            id = ID,
-            requirements = Requirements,
-            types = maps:get(types, DomainMap, []),
-            predicates = maps:get(predicates, DomainMap, []),
-            actions = maps:get(actions, DomainMap, [])
-        },
-    cleanup(),
-    Domain.
+    #domain{
+        id = ID,
+        requirements = Requirements,
+        parameters = maps:get(parameters, DomainMap, []),
+        types = maps:get(types, DomainMap, []),
+        predicates = maps:get(predicates, DomainMap, []),
+        actions = maps:get(actions, DomainMap, [])
+    }.
+
+to_probabilistic_effect(ProbEffects) ->
+    require('probabilistic-effects'),
+    Sum = fun({Val, _}, Acc) -> Val + Acc end,
+    Total = lists:foldl(Sum, 0, ProbEffects),
+    NewProbEffects =
+        if
+            Total > 1 ->
+                %% Constraint violation
+                error(bad_probabilistic);
+
+            Total < 1 ->
+                Diff = 1.0 - Total,
+                RoundedDiff = round(Diff * math:pow(10, 2)) / math:pow(10, 2),
+                [{RoundedDiff, #effect{delta=true}}|ProbEffects];
+
+            true ->
+                ProbEffects
+        end,
+    #effect{delta=NewProbEffects}.
+
+to_external_effect(Method, URL, Headers, Body) ->
+    require('external-effects'),
+    ValidMethods =
+        [<<"post">>,
+         <<"put">>,
+         <<"patch">>,
+         <<"get">>,
+         <<"delete">>
+        ],
+
+    case lists:member(Method, ValidMethods) of
+        true ->
+            Delta = #external_effect{
+                method=Method,
+                url = URL,
+                headers=Headers,
+                body=Body
+            },
+            #effect{delta=Delta};
+
+        false ->
+            erlang:error({invalid_method, Method})
+    end.

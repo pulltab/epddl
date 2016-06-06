@@ -8,6 +8,7 @@ INT         =   {DIGIT}+
 NUMBER      =   {INT}(\.{INT}+)?
 NAME        =   {LETTER}{CHAR}*
 IDENTIFIER  =   \?{NAME}
+STRING      =   \"(\\.|[^"])*\"
 
 DEFINE          =   define
 DOMAIN          =   domain
@@ -65,6 +66,8 @@ Rules.
 {NUMBER}        : {token, {number, TokenLine, list_to_float(TokenChars)}}.
 {NAME}          : {token, {name, TokenLine, list_to_binary(TokenChars)}}.
 {IDENTIFIER}    : [$?|ID] = TokenChars, {token, {name, TokenLine, list_to_binary(ID)}}.
+{STRING}        : Guts = string:strip(TokenChars, both, $\"),
+                  {token, {string, TokenLine, list_to_binary(Guts)}}.
 
 {WHITESPACE}+   : skip_token.
 

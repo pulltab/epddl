@@ -17,8 +17,35 @@ tokens(Binary) when is_binary(Binary) ->
 
 parse(String) ->
     {ok, Tokens, _} = epddl_tokenizer:string(String),
-    {ok, AST} = epddl_parser:parse(Tokens),
-    AST.
+    Self = self(),
+
+    %% Parsing requires use of global state (ETS).
+    %% As such, we parse within a separate thread to
+    %% ensure this global state is cleaned up properly.
+    ParseFN =
+        fun()->
+            Res =
+                try
+                    epddl_parser:parse(Tokens)
+                catch
+                    _:Reason ->
+                        {error, Reason}
+                end,
+            Self ! {'$epddl_parse', Res}
+        end,
+    Pid = spawn(ParseFN),
+    Ref = erlang:monitor(process, Pid),
+
+    receive
+        {'$epddl_parse', {ok, Res}} ->
+            Res;
+
+        {'$epddl_parse', {error, Error}} ->
+            error(Error);
+    
+        {_, Ref, process, _, Info} ->
+            error({parsing_failed, Info})
+    end.
 
 parse_file(Filename) ->
 	{ok, FileContents} = read_lines(Filename),

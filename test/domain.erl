@@ -1,4 +1,4 @@
--module(epddl_domain_test).
+-module(domain).
 
 -include("../include/epddl_types.hrl").
 
@@ -59,3 +59,14 @@ simple_action_precondition_test() ->
     {'and', [Loc, IsCar]} = Bar#action.precondition,
     {predicate, <<"loc">>, [<<"x">>, <<"y">>]} = Loc,
     {predicate, <<"isCar">>, [<<"y">>]} = IsCar.
+
+parameters_test() ->
+    DomainStr = "(define (domain foo) (:parameters ?host ?port) (:action bar :precondition (and (loc ?x ?y) (isCar ?y))))",
+    Domain = epddl:parse(DomainStr),
+
+    ?assertMatch([<<"parameterized-domains">>], Domain#domain.requirements),
+
+    Params = Domain#domain.parameters,
+    ?assert(is_list(Params)),
+    ?assert(length(Params) == 2),
+    ?assertMatch([], [<<"host">>, <<"port">>] -- Params).
