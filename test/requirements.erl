@@ -1,4 +1,4 @@
--module(epddl_requirements_typing_test).
+-module(requirements).
 
 -include("../include/epddl_types.hrl").
 
