@@ -37,14 +37,11 @@ parse(String) ->
     Ref = erlang:monitor(process, Pid),
 
     receive
-        {'$epddl_parse', {ok, Res}} ->
+        {'$epddl_parse', Res} ->
             Res;
-
-        {'$epddl_parse', {error, Error}} ->
-            error(Error);
-    
+            
         {_, Ref, process, _, Info} ->
-            error({parsing_failed, Info})
+            {error, {parsing_failed, Info}}
     end.
 
 parse_file(Filename) ->

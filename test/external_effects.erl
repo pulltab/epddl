@@ -6,7 +6,7 @@
 
 string_test() ->
     DomainStr = "(define (domain foo) (:action bar :effect (post \"\" \"\" \"\" )))",
-    Domain = epddl:parse(DomainStr),
+    {ok, Domain} = epddl:parse(DomainStr),
 
     [Bar] = Domain#domain.actions,
     Effect = Bar#action.effect,
@@ -21,7 +21,7 @@ string_test() ->
 
 string_template_test() ->
     DomainStr = "(define (domain foo) (:action bar :effect (post (\"http://www.google.com/{}/{}/{}\" ?x ?y ?z) ( \"\" ?a ?b) (\"\"))))",
-    Domain = epddl:parse(DomainStr),
+    {ok, Domain} = epddl:parse(DomainStr),
 
     [Bar] = Domain#domain.actions,
     Effect = Bar#action.effect,
@@ -39,7 +39,7 @@ valid_method_test() ->
 
     [begin
         DomainStr = lists:flatten(io_lib:format("(define (domain foo) (:action bar :effect (~s () () ())))", [Method])),
-        Domain = epddl:parse(DomainStr),
+        {ok, Domain} = epddl:parse(DomainStr),
 
         ?assertMatch([<<"external-effects">>], Domain#domain.requirements),
 
@@ -59,12 +59,4 @@ valid_method_test() ->
 
 invalid_method_test() ->
     DomainStr = "(define (domain foo) (:action bar :effect (badmethod () () ())))",
-    Good=
-        try
-          _Domain = epddl:parse(DomainStr),
-          false %% <--- Should not be reached
-        catch
-          _:_ ->
-            true
-        end,
-    ?assert(Good).
+    ?assertMatch({error, _}, epddl:parse(DomainStr)).

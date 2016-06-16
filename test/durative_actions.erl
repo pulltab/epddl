@@ -6,7 +6,7 @@
 
 durative_action_equal_test() ->
     DomainStr ="(define (domain foo) (:action bar :duration (= 10) :effect ()))",
-    Domain = epddl:parse(DomainStr),
+    {ok, Domain} = epddl:parse(DomainStr),
 
     [<<"durative-actions">>] = Domain#domain.requirements,
         
@@ -15,7 +15,7 @@ durative_action_equal_test() ->
 
 durative_action_literal_test() ->
     DomainStr ="(define (domain foo) (:action bar :duration 101 :effect ()))",
-    Domain = epddl:parse(DomainStr),
+    {ok, Domain} = epddl:parse(DomainStr),
 
     [<<"durative-actions">>] = Domain#domain.requirements,
     [Bar] = Domain#domain.actions,
@@ -23,7 +23,7 @@ durative_action_literal_test() ->
 
 durative_action_gte_test() ->
     DomainStr ="(define (domain foo) (:action bar :duration (>= 101.103) :effect ()))",
-    Domain = epddl:parse(DomainStr),
+    {ok, Domain} = epddl:parse(DomainStr),
 
     ?assert(lists:member(<<"duration-inequalities">>, Domain#domain.requirements)),
 
@@ -32,7 +32,7 @@ durative_action_gte_test() ->
 
 durative_action_lte_test() ->
     DomainStr ="(define (domain foo) (:action bar :duration (<= 300) :effect ()))",
-    Domain = epddl:parse(DomainStr),
+    {ok, Domain} = epddl:parse(DomainStr),
 
     ?assert(lists:member(<<"duration-inequalities">>, Domain#domain.requirements)),
 
@@ -41,7 +41,7 @@ durative_action_lte_test() ->
 
 multi_constraint_durative_action_test() ->
     DomainStr ="(define (domain foo) (:action bar :duration (and (<= 300) (>= 250)) :effect ()))",
-    Domain = epddl:parse(DomainStr),
+    {ok, Domain} = epddl:parse(DomainStr),
 
     ?assert(lists:member(<<"duration-inequalities">>, Domain#domain.requirements)),
 
@@ -60,7 +60,7 @@ duration_var_in_constraint_results_in_error_test() ->
 
 start_effect_test() ->
     DomainStr = "(define (domain foo) (:action bar :duration (<= 300) :effect (at start ())))",
-    Domain = epddl:parse(DomainStr),
+    {ok, Domain} = epddl:parse(DomainStr),
 
     [Bar] = Domain#domain.actions,
     Effect = Bar#action.effect,
@@ -68,7 +68,7 @@ start_effect_test() ->
 
 stop_effect_test() ->
     DomainStr = "(define (domain foo) (:action bar :duration (<= 300) :effect (at end ())))",
-    Domain = epddl:parse(DomainStr),
+    {ok, Domain} = epddl:parse(DomainStr),
 
     [Bar] = Domain#domain.actions,
     Effect = Bar#action.effect,
@@ -76,7 +76,7 @@ stop_effect_test() ->
 
 nested_durative_effect_test() ->
     DomainStr = "(define (domain foo) (:action bar :duration (<= 300) :effect (and (at end ()) (at start ()))))",
-    Domain = epddl:parse(DomainStr),
+    {ok, Domain} = epddl:parse(DomainStr),
 
     [Bar] = Domain#domain.actions,
     Effect = Bar#action.effect,
