@@ -1,4 +1,4 @@
--module(epddl_domain_test).
+-module(domain).
 
 -include("../include/epddl_types.hrl").
 
@@ -6,14 +6,14 @@
 
 empty_domain_test() ->
     SimpleDomain = "(define (domain foo))",
-    DomainDef = epddl:parse(SimpleDomain),
+    {ok, DomainDef} = epddl:parse(SimpleDomain),
     ?assert(is_record(DomainDef, domain)),
     ?assert(DomainDef#domain.id /= undefined),
     ?assert(DomainDef#domain.id == <<"foo">>).
 
 simple_action_test() ->
     DomainStr = "(define (domain foo) (:action bar :effect ()))",
-    Domain = epddl:parse(DomainStr),
+    {ok, Domain} = epddl:parse(DomainStr),
 
     ?assert(length(Domain#domain.actions) == 1),
     [Bar] = Domain#domain.actions,
@@ -26,7 +26,7 @@ simple_action_test() ->
 
 action_effect_test() ->
     DomainStr = "(define (domain foo) (:action bar :effect (and (loc ?v) (loc ?b) (not (loc ?c ?d)))))",
-    Domain = epddl:parse(DomainStr),
+    {ok, Domain} = epddl:parse(DomainStr),
 
     [Bar] = Domain#domain.actions,
     ?assert(Bar#action.effect /= undefined),
@@ -42,7 +42,7 @@ action_effect_test() ->
 
 action_parameters_test() ->
     DomainStr = "(define (domain foo) (:action bar :parameters (?a ?b ?c)))",
-    Domain = epddl:parse(DomainStr),
+    {ok, Domain} = epddl:parse(DomainStr),
 
     [Bar] = Domain#domain.actions,
 
@@ -53,9 +53,20 @@ action_parameters_test() ->
 
 simple_action_precondition_test() ->
     DomainStr = "(define (domain foo) (:action bar :precondition (and (loc ?x ?y) (isCar ?y))))",
-    Domain = epddl:parse(DomainStr),
+    {ok, Domain} = epddl:parse(DomainStr),
 
     [Bar] = Domain#domain.actions,
     {'and', [Loc, IsCar]} = Bar#action.precondition,
     {predicate, <<"loc">>, [<<"x">>, <<"y">>]} = Loc,
     {predicate, <<"isCar">>, [<<"y">>]} = IsCar.
+
+parameters_test() ->
+    DomainStr = "(define (domain foo) (:parameters ?host ?port) (:action bar :precondition (and (loc ?x ?y) (isCar ?y))))",
+    {ok, Domain} = epddl:parse(DomainStr),
+
+    ?assertMatch([<<"parameterized-domains">>], Domain#domain.requirements),
+
+    Params = Domain#domain.parameters,
+    ?assert(is_list(Params)),
+    ?assert(length(Params) == 2),
+    ?assertMatch([], [<<"host">>, <<"port">>] -- Params).
